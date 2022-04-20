@@ -1,0 +1,366 @@
+// This File is a part of project to use GA to generate test patterns 
+// for Sequential cirucits
+
+
+
+
+int Seed(startvalue)
+int startvalue;
+{
+   long now;
+
+   if(startvalue==0) { /* Use current CPU time as seed	*/
+      now=time((long *)NULL);
+      srandom((int)now);
+      return((int)now);
+   }
+   else { /* Use input as seed	*/
+      srandom(startvalue);
+      return(startvalue);
+   }
+}
+
+/*-------------------------------------------------------------------
+	GetRandompattern
+	Generate a parallel random pattern for a given array 
+	Uses random()
+--------------------------------------------------------------------*/
+void GetRandompattern()
+{
+   int i,j;
+   unsigned sum;
+
+   j=WORDSIZE;
+   for(i=0;i<nopi;i++) {
+      if(j==WORDSIZE) { sum=random(); j=1; }
+      if((sum & BITMASK[j]) == ALL0) { InVal[i]=ZERO; }
+      else { InVal[i]=ONE; }
+      j++;
+   }
+}
+
+
+//////////////////////////////////////////////////////////
+void store_Sol(GALIST *reslist, int InitCou)
+{
+int i, j;
+
+	for (j=0; j<nopi; j++)
+	{
+		reslist[InitCou].indi[counter][j]=InVal[j];
+	}
+
+}
+/////////////////////////////////////////////////////
+void SelectRoulette(GALIST *reslist, int Init){
+int i, j, x;
+double c[Init];
+double d[Init];
+int cover;
+double xlimit, ylimit;
+cover=0;
+	for(i=0;i<Init;i++)
+	{
+	 x=(int)(reslist[i].fitness);
+	 cover+=x;
+	}
+
+
+	for (j=0;j<Init; j++)
+	{
+		c[j]=(reslist[j].fitness/ (double)(cover));
+		printf ("Select %f - ", c[j]);
+
+	}
+
+printf ("\n");
+}
+
+///////////////////////////////////////////////////////
+void fitness (GALIST *reslist, int InitCou){
+
+	reslist[InitCou].fitness = coverage;
+}
+////////////////////////////////////////////////////
+int comp (const void * x, const void * y)
+{
+	GALIST *A = (GALIST *)x;
+	GALIST *B = (GALIST *)y;
+
+	return (B->fitness - A->fitness);
+}
+/////////////////////////////////////////////////////
+void sort_list (GALIST *reslist)
+{
+	qsort (reslist, 900, sizeof(*reslist), comp);
+}
+
+
+//////////////////////////////////////////////////////////
+
+void store_list(GALIST *GAlist, int SecCou)
+{
+int i, j;
+
+	for (j=0; j<nopi; j++)
+	{
+		GAlist[SecCou].indi[counter][j]=InVal[j];
+	}
+
+}
+
+/////////////////////////////////////////////////////////////////////////////
+void CpList(GALIST *reslist, GALIST *GAlist, int Init, int SecCou){
+int i, j;
+
+   for (j=0;j<counter;j++)
+   {
+	for (i=0; i<nopi;i++)
+	{
+	   reslist[Init].indi[j][i]=GAlist[SecCou].indi[j][i];
+	}
+	reslist[Init].fitness=GAlist[SecCou].fitness;
+
+   }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////
+void crossoverOnePoint(GALIST *reslist, int InitCou){
+
+int i, j, x;
+
+for (x=0; x<InitCou; x++){
+
+	for (j=0; j<crossoverPoint; j++){
+	   for (i=0;i<nopi; i++)
+		{
+		temp[x].indi[j][i]=reslist[x].indi[j][i];
+		}
+	}
+
+
+	for (j=crossoverPoint; j<POPSIZE; j++){
+	   for (i=0;i<nopi;i++)
+		{
+		temp[x].indi[j][i]=reslist[x+1].indi[j][i];
+		}
+	}
+
+	x++;
+
+	for (j=0; j<crossoverPoint; j++){
+	   for (i=0;i<nopi; i++)
+		{
+		temp[x].indi[j][i]=reslist[x].indi[j][i];
+		}
+	}
+
+
+	for (j=crossoverPoint; j<POPSIZE; j++){
+	   for (i=0;i<nopi;i++)
+		{
+		temp[x].indi[j][i]=reslist[x-1].indi[j][i];
+		}
+	}
+
+
+}
+
+}
+
+////////////////////////////////////////////////////////////
+
+void GetTest(int SecCounter){
+int i;
+	for (i=0; i<nopi; i++)
+	InVal[i]=temp[SecCounter].indi[counter][i];
+
+}
+
+///////////////////////////////////////////////
+
+void mutate(GALIST *mut, int Init){
+
+int i, j;
+	for (j=0; j<Init; j++){
+	   for (i=0; i<nopi;i++){
+		if(mut[j].indi[crossoverPoint][i] == 1) 
+		     {mut[j].indi[crossoverPoint][i] = 0;}
+	        else
+		     {mut[j].indi[crossoverPoint][i] = 1;}
+
+	  }
+	}
+
+}
+
+
+///////////////////////////////////////////////////
+
+void crossoverTwoPoint(GALIST *reslist, int InitCou){
+
+int i, j, x;
+
+for (x=0; x<InitCou; x++){
+
+	// First Child
+	for (j=0; j<crossoverPoint; j++){	//from zero to crossoverPoint
+	   for (i=0;i<nopi; i++)
+		{
+		temp[x].indi[j][i]=reslist[x].indi[j][i];
+		}
+	}
+
+
+	for (j=crossoverPoint; j<SeccrossoverPoint; j++){ 	// from crossoverPoint to SeccrossoverPoint
+	   for (i=0;i<nopi;i++)
+		{
+		temp[x].indi[j][i]=reslist[x+1].indi[j][i];
+		}
+	}
+
+
+
+	for (j=SeccrossoverPoint; j<POPSIZE; j++){	// from Seccrossover to end
+	   for (i=0;i<nopi;i++)
+		{
+		temp[x].indi[j][i]=reslist[x].indi[j][i];
+		}
+	}
+
+	x++;
+
+	 // Second Child
+
+	for (j=0; j<crossoverPoint; j++){
+	   for (i=0;i<nopi; i++)
+		{
+		temp[x].indi[j][i]=reslist[x].indi[j][i];
+		}
+	}
+
+
+	for (j=crossoverPoint; j<SeccrossoverPoint; j++){
+	   for (i=0;i<nopi;i++)
+		{
+		temp[x].indi[j][i]=reslist[x-1].indi[j][i];
+		}
+	}
+
+	for (j=SeccrossoverPoint; j<POPSIZE; j++){
+	   for (i=0;i<nopi;i++)
+		{
+		temp[x].indi[j][i]=reslist[x].indi[j][i];
+		}
+	}
+
+
+}
+}
+
+///////////////////////////////////////////////////////////////////////
+
+void crossoverUniform(GALIST *reslist, int InitCou){
+
+int i, j, x;
+
+for (x=0; x<InitCou; x++){
+
+	// First Child
+	for (j=0; j<POPSIZE; j++){
+	   for (i=0;i<nopi; i++)
+		{
+		temp[x].indi[j][i]=(reslist[x].indi[j][i]) & (reslist[x+1].indi[j][i]);
+		}
+	}
+
+
+	x++;
+
+	 // Second Child
+
+	for (j=0; j<POPSIZE; j++){
+	   for (i=0;i<nopi; i++)
+		{
+		temp[x].indi[j][i]=(reslist[x].indi[j][i]) | (reslist[x-1].indi[j][i]);
+		}
+	}
+
+
+}
+}
+
+
+
+
+
+/*
+void crossover ()
+{
+int i, j;
+
+
+		printf("CrossOverPoint : %d\n", crossoverPoint); //TESTING
+
+	if ((countGA+1) < SecCounter){
+
+	  for (i=0; i<crossoverPoint; i++)
+	  {
+		InVal[i]=reslist[countGA].indi[i];
+	  }
+
+
+	  for (i=crossoverPoint; i<nopi; i++)
+	  {
+		InVal[i]=reslist[(countGA+1)].indi[i];
+	  }
+	}
+
+	else{	// do mutation
+	  for (i=0; i<nopi; i++)
+	  {
+		InVal[i]=reslist[SecCounter].indi[i];
+	  }
+
+	if (InVal[crossoverPoint]== 0 ){InVal[crossoverPoint]=1;}
+		else {InVal[crossoverPoint]=0;}
+
+	}
+
+}
+
+
+void Seccrossover ()
+{
+int i,j;
+
+		printf("CrossOverPoint SEC : %d\n", crossoverPoint); //TESTING
+
+	if (countGA <= SecCounter){
+
+	for (i=0; i<crossoverPoint; i++)
+	{
+		InVal[i]=reslist[countGA].indi[i];
+	}
+
+	for (i=crossoverPoint; i<nopi; i++)
+	{
+		InVal[i]=reslist[(countGA-1)].indi[i];
+	}
+
+	}
+
+	else{	// do mutation
+	  for (i=0; i<nopi; i++)
+	  {
+		InVal[i]=reslist[SecCounter].indi[i];
+	  }
+
+	if (InVal[crossoverPoint]== 0){InVal[crossoverPoint]=1;}
+	else {InVal[crossoverPoint]=0;}
+
+	}
+}
+*/
